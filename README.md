@@ -1,4 +1,3 @@
-```markdown
 # AlertaOutlookTray
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B%20%7C%207%2B-5391FE?logo=powershell&logoColor=white)
