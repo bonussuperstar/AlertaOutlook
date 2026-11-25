@@ -22,7 +22,7 @@ if (-not (Test-Path $configDir)) {
 
 # Configuració per defecte
 $defaultConfig = [ordered]@{
-    Theme           = "Dark"      # "Dark" o "Light"
+    Theme           = "System"    # "System", "Dark" o "Light"
     AccentHex       = "#D93025"   # Vermell per defecte
     IconStyle       = "Envelope"  # "Circle", "Envelope" o "Custom"
     CustomIdleIcon  = ""
@@ -64,6 +64,19 @@ function Save-Config {
         New-Item -Path $configDir -ItemType Directory -Force | Out-Null
     }
     $cfg | ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
+}
+
+# Resol el tema efectiu ("Dark" o "Light") consultant el registre de Windows si està en "System"
+function Get-EffectiveTheme {
+    if ($config.Theme -eq "Light" -or $config.Theme -eq "Dark") {
+        return $config.Theme
+    }
+    try {
+        $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+        $val = Get-ItemPropertyValue -Path $regPath -Name "AppsUseLightTheme" -ErrorAction Stop
+        if ($val -eq 1) { return "Light" }
+    } catch {}
+    return "Dark"
 }
 
 $config = Load-Config
@@ -185,9 +198,10 @@ function Apply-FormPosition {
 
 function Apply-FormTheme {
     if (-not $state.Form -or $state.Form.IsDisposed) { return }
-    $accent = [System.Drawing.ColorTranslator]::FromHtml($config.AccentHex)
+    $accent         = [System.Drawing.ColorTranslator]::FromHtml($config.AccentHex)
+    $effectiveTheme = Get-EffectiveTheme
 
-    if ($config.Theme -eq "Light") {
+    if ($effectiveTheme -eq "Light") {
         $state.Form.BackColor     = [System.Drawing.Color]::FromArgb(248, 249, 250)
         $state.LblSender.ForeColor  = [System.Drawing.Color]::FromArgb(25, 25, 28)
         $state.LblSubject.ForeColor = [System.Drawing.Color]::FromArgb(65, 65, 70)
@@ -214,10 +228,11 @@ $miPause = New-Object System.Windows.Forms.ToolStripMenuItem("Pausar avisos")
 $miPause.CheckOnClick = $true
 
 # Submenú Tema
-$miTheme      = New-Object System.Windows.Forms.ToolStripMenuItem("Tema dels avisos")
-$miThemeDark  = New-Object System.Windows.Forms.ToolStripMenuItem("Fosc")
-$miThemeLight = New-Object System.Windows.Forms.ToolStripMenuItem("Clar")
-$miTheme.DropDownItems.AddRange(@($miThemeDark, $miThemeLight))
+$miTheme       = New-Object System.Windows.Forms.ToolStripMenuItem("Tema dels avisos")
+$miThemeSystem = New-Object System.Windows.Forms.ToolStripMenuItem("Automàtic (Sistema)")
+$miThemeDark   = New-Object System.Windows.Forms.ToolStripMenuItem("Fosc")
+$miThemeLight  = New-Object System.Windows.Forms.ToolStripMenuItem("Clar")
+$miTheme.DropDownItems.AddRange(@($miThemeSystem, (New-Object System.Windows.Forms.ToolStripSeparator), $miThemeDark, $miThemeLight))
 
 # Submenú Color de destacat
 $miColor = New-Object System.Windows.Forms.ToolStripMenuItem("Color de destacat")
@@ -282,6 +297,7 @@ $menu.Items.AddRange(@(
 $notifyIcon.ContextMenuStrip = $menu
 
 function Sync-MenuChecks {
+    $miThemeSystem.Checked   = ($config.Theme -eq "System")
     $miThemeDark.Checked     = ($config.Theme -eq "Dark")
     $miThemeLight.Checked    = ($config.Theme -eq "Light")
     $miIconEnvelope.Checked  = ($config.IconStyle -eq "Envelope")
@@ -307,6 +323,9 @@ $miPause.Add_Click({
     Rebuild-IconsAndVisuals
 })
 
+$miThemeSystem.Add_Click({
+    $config.Theme = "System"; Save-Config $config; Rebuild-IconsAndVisuals; Sync-MenuChecks
+})
 $miThemeDark.Add_Click({
     $config.Theme = "Dark"; Save-Config $config; Rebuild-IconsAndVisuals; Sync-MenuChecks
 })
@@ -429,6 +448,7 @@ function Show-Or-UpdateAlert {
     if ($config.PlaySound) { [System.Media.SystemSounds]::Exclamation.Play() }
 
     if ($state.IsAlertOpen -and $state.Form -and -not $state.Form.IsDisposed) {
+        Apply-FormTheme
         Update-AlertWindowText -Sender $Sender -Subject $Subject -Time $Time
         return
     }
