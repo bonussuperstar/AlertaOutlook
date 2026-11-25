@@ -1,5 +1,12 @@
 # AlertaOutlookTray
 
+![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B%20%7C%207%2B-5391FE?logo=powershell&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)
+![Outlook](https://img.shields.io/badge/Outlook-Classic%20Desktop%20(COM)-0F6CBD?logo=microsoftoutlook&logoColor=white)
+![UI](https://img.shields.io/badge/UI-Windows%20Forms%20%7C%20Per--Monitor%20V2%20DPI-00A4EF)
+![Config](https://img.shields.io/badge/Config-JSON%20(%25APPDATA%25)-2EA44F)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
+
 Monitor de safata del sistema (**System Tray**) escrit en **PowerShell** amb **Windows Forms** que vigila la safata d'entrada de l'**Outlook clàssic d'escriptori** i mostra una finestra emergent persistent (`TopMost`) davant de totes les aplicacions quan arriba un correu nou sense llegir.
 
 ---
